@@ -9,7 +9,8 @@
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
     "db:migrate": "ts-node-dev src/db/migrate.ts",
     "test:db": "ts-node test/db.test.ts",
-    "test": "npm run test:db"
+    "test:auth": "ts-node test/auth.test.ts",
+    "test": "npm run test:db && npm run test:auth"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
