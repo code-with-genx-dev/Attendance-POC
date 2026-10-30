@@ -10,7 +10,8 @@
     "db:migrate": "ts-node-dev src/db/migrate.ts",
     "test:db": "ts-node test/db.test.ts",
     "test:auth": "ts-node test/auth.test.ts",
-    "test": "npm run test:db && npm run test:auth"
+    "test:qr": "ts-node test/qr.test.ts",
+    "test": "npm run test:db && npm run test:auth && npm run test:qr"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

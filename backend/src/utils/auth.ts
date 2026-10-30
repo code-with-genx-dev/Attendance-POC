@@ -42,3 +42,4 @@ export function generateTemporaryPassword(length = 8): string {
   }
   return result;
 }
+

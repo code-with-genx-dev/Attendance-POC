@@ -14,3 +14,4 @@ router.post('/auth/change-password', requireAuth, changePassword);
 router.get('/me', requireAuth, getMe);
 
 export default router;
+

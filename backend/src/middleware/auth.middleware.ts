@@ -82,3 +82,4 @@ export function requireRole(...allowedRoles: Array<'Admin' | 'Employee'>) {
 
 export const requireAdmin = requireRole('Admin');
 export const requireEmployee = requireRole('Employee', 'Admin');
+

@@ -2,6 +2,7 @@ import express, { Application, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import healthRoutes from './routes/health.routes';
 import authRoutes from './routes/auth.routes';
+import qrRoutes from './routes/qr.routes';
 import { requireAuth, requireAdmin } from './middleware/auth.middleware';
 
 const app: Application = express();
@@ -14,6 +15,7 @@ app.use(express.urlencoded({ extended: true }));
 // Base routes
 app.use('/api', healthRoutes);
 app.use('/api', authRoutes);
+app.use('/api', qrRoutes);
 
 // Protected Admin Role Verification Route (used to test RBAC)
 app.get('/api/admin/ping', requireAuth, requireAdmin, (req: Request, res: Response) => {
