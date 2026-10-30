@@ -57,7 +57,7 @@ DB_HOST=localhost
 DB_PORT=3306
 DB_NAME=attendance_poc_db
 DB_USER=root
-DB_PASSWORD=your_password
+DB_PASSWORD=""
 ```
 *(Note: If MySQL is not running or credentials are not yet entered, the backend automatically runs in safe **Mock Fallback Store** mode, allowing immediate testing without crashing).*
 
@@ -146,3 +146,4 @@ Individual test suites:
 3. **No External Database Dependencies**: Self-contained MySQL database administered by the user through phpMyAdmin.
 4. **Resilient Mock Fallback**: When MySQL is disconnected, the system falls back to an in-memory repository store without throwing unhandled exceptions.
 5. **Replay & Tamper Protection**: QR tokens are signed with HMAC-SHA256 and tracked in the database to prevent screenshots, badge-sharing, or duplicate scans.
+
