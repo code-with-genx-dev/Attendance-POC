@@ -75,18 +75,42 @@ export default function EmployeeList() {
     <div>
       {/* Header bar */}
       <div className="flex flex-col sm:flex-row gap-3 mb-3">
-        <div className="flex-1">
+        <div className="flex-1 relative flex items-center">
           <input
             type="text"
             placeholder="Search by name, email or code…"
             value={searchQ}
             onChange={e => setSearchQ(e.target.value)}
-            className="w-full text-xs border border-[#E2E8F0] rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-[#1D4ED8] text-[#172554] placeholder-gray-400 bg-white"
+            className="w-full text-xs border border-[#E2E8F0] rounded-lg pl-3 pr-8 py-2 focus:outline-none focus:ring-1 focus:ring-[#1D4ED8] text-[#172554] placeholder-gray-400 bg-white shadow-sm"
           />
+          {searchQ ? (
+            <button
+              type="button"
+              onClick={() => setSearchQ('')}
+              className="absolute right-2.5 text-gray-400 hover:text-gray-600 text-xs px-1"
+              title="Clear search"
+            >
+              ✕
+            </button>
+          ) : null}
         </div>
+
+        {searchQ ? (
+          <button
+            type="button"
+            onClick={() => setSearchQ('')}
+            className="inline-flex items-center gap-1 px-3 py-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 text-xs font-medium rounded-lg transition-colors whitespace-nowrap shadow-sm"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            Reset Search
+          </button>
+        ) : null}
+
         <button
           onClick={() => setShowModal(true)}
-          className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#1D4ED8] hover:bg-[#1e40af] text-white text-xs font-medium rounded-lg transition-colors whitespace-nowrap"
+          className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#1D4ED8] hover:bg-[#1e40af] text-white text-xs font-medium rounded-lg transition-colors whitespace-nowrap shadow-sm"
         >
           <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
@@ -97,7 +121,7 @@ export default function EmployeeList() {
 
       {/* New credential banner */}
       {newCred && (
-        <div className="mb-3 bg-green-50 border border-green-200 rounded-xl p-4">
+        <div className="mb-3 bg-green-50 border border-green-200 rounded-xl p-4 shadow-sm">
           <div className="flex items-start justify-between">
             <div>
               <div className="text-sm font-semibold text-green-800 mb-1">
@@ -125,7 +149,7 @@ export default function EmployeeList() {
       )}
 
       {/* Table */}
-      <div className="bg-white rounded-xl border border-[#E2E8F0] overflow-hidden">
+      <div className="bg-white rounded-xl border border-[#E2E8F0] overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full text-[13px]">
             <thead>
@@ -166,7 +190,7 @@ export default function EmployeeList() {
             </tbody>
           </table>
         </div>
-        <div className="px-3 py-2 border-t border-[#E2E8F0] bg-gray-50 text-xs text-gray-500">
+        <div className="px-3 py-2 border-t border-[#E2E8F0] bg-gray-50 text-xs text-gray-500 font-medium">
           {loading ? '' : `${filtered.length} employee${filtered.length !== 1 ? 's' : ''}`}
         </div>
       </div>
