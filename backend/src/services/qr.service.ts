@@ -10,6 +10,9 @@ export interface QrPayload {
   expiresInSeconds: number;
   qrImageDataUrl: string;
   refreshIntervalSeconds: number;
+  imageDataUrl?: string;
+  ttlSeconds?: number;
+  tokenId?: number;
 }
 
 export class QrService {
@@ -79,11 +82,15 @@ export class QrService {
       dbRecordId: record.id
     };
 
+    const ttl = Math.max(0, Math.round((expiresAt - Date.now()) / 1000));
     return {
       token: signedString,
       expiresAt: new Date(expiresAt).toISOString(),
-      expiresInSeconds: Math.max(0, Math.round((expiresAt - Date.now()) / 1000)),
+      expiresInSeconds: ttl,
+      ttlSeconds: ttl,
       qrImageDataUrl,
+      imageDataUrl: qrImageDataUrl,
+      tokenId: record.id,
       refreshIntervalSeconds: config.qr.rotationIntervalSeconds
     };
   }
@@ -97,11 +104,15 @@ export class QrService {
       return this.generateNewToken();
     }
 
+    const ttl = Math.max(0, Math.round((this.currentToken.expiresAt - now) / 1000));
     return {
       token: this.currentToken.signedString,
       expiresAt: new Date(this.currentToken.expiresAt).toISOString(),
-      expiresInSeconds: Math.max(0, Math.round((this.currentToken.expiresAt - now) / 1000)),
+      expiresInSeconds: ttl,
+      ttlSeconds: ttl,
       qrImageDataUrl: this.currentToken.qrImageDataUrl,
+      imageDataUrl: this.currentToken.qrImageDataUrl,
+      tokenId: this.currentToken.dbRecordId,
       refreshIntervalSeconds: config.qr.rotationIntervalSeconds
     };
   }

@@ -55,9 +55,12 @@ export async function login(req: AuthenticatedRequest, res: Response): Promise<v
     status: user.status
   });
 
+  const mustChangePassword = user.status === 'pending_password_change';
+
   res.json({
     message: 'Authentication successful.',
     token,
+    mustChangePassword,
     user: {
       id: user.id,
       company_email: user.company_email,
@@ -65,16 +68,18 @@ export async function login(req: AuthenticatedRequest, res: Response): Promise<v
       employee_code: user.employee_code,
       role: user.role,
       status: user.status,
-      mustChangePassword: user.status === 'pending_password_change'
+      mustChangePassword
     }
   });
 }
 
 export async function changePassword(req: AuthenticatedRequest, res: Response): Promise<void> {
   const user = req.user!;
-  const { currentPassword, newPassword } = req.body;
+  const { currentPassword, newPassword, current_password, new_password } = req.body;
+  const targetNewPassword = newPassword || new_password;
+  const targetCurrentPassword = currentPassword || current_password;
 
-  if (!newPassword || typeof newPassword !== 'string' || newPassword.length < 8) {
+  if (!targetNewPassword || typeof targetNewPassword !== 'string' || targetNewPassword.length < 8) {
     res.status(400).json({
       error: 'Bad Request',
       message: 'New password must be a string of at least 8 characters.'
@@ -84,7 +89,7 @@ export async function changePassword(req: AuthenticatedRequest, res: Response): 
 
   // If user is already active (not first-time temporary password reset), require current password
   if (user.status !== 'pending_password_change') {
-    if (!currentPassword) {
+    if (!targetCurrentPassword) {
       res.status(400).json({
         error: 'Bad Request',
         message: 'Current password is required to update your password.'
@@ -92,7 +97,7 @@ export async function changePassword(req: AuthenticatedRequest, res: Response): 
       return;
     }
 
-    const isMatch = await comparePassword(currentPassword, user.password_hash);
+    const isMatch = await comparePassword(targetCurrentPassword, user.password_hash);
     if (!isMatch) {
       res.status(401).json({
         error: 'Unauthorized',
@@ -102,7 +107,7 @@ export async function changePassword(req: AuthenticatedRequest, res: Response): 
     }
   }
 
-  const newHash = await hashPassword(newPassword);
+  const newHash = await hashPassword(targetNewPassword);
   await dbRepository.updateUserPassword(user.id, newHash);
 
   await dbRepository.createAuditLog({

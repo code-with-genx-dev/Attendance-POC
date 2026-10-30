@@ -15,7 +15,8 @@
     "test:correction": "ts-node test/correction.test.ts",
     "test:admin": "ts-node test/admin.test.ts",
     "test:mobile": "ts-node test/mobileApi.test.ts",
-    "test": "npm run test:db && npm run test:auth && npm run test:qr && npm run test:attendance && npm run test:correction && npm run test:admin && npm run test:mobile"
+    "test:e2e": "ts-node test/e2e.test.ts",
+    "test": "npm run test:db && npm run test:auth && npm run test:qr && npm run test:attendance && npm run test:correction && npm run test:admin && npm run test:mobile && npm run test:e2e"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

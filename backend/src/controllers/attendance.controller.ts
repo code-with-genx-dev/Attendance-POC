@@ -38,9 +38,10 @@ export function formatOfficeTime(date: Date = new Date()): string {
  */
 export async function scanAttendance(req: AuthenticatedRequest, res: Response): Promise<void> {
   const user = req.user!;
-  const { token, idempotency_key } = req.body;
+  const { token, qr_token, idempotency_key } = req.body;
+  const targetToken = token || qr_token;
 
-  if (!token || typeof token !== 'string') {
+  if (!targetToken || typeof targetToken !== 'string') {
     res.status(400).json({
       error: 'Bad Request',
       message: 'QR code token is required.'
@@ -63,7 +64,7 @@ export async function scanAttendance(req: AuthenticatedRequest, res: Response): 
   }
 
   // Cryptographically validate and consume token (enforces replay protection)
-  const tokenValidation = await qrService.validateAndConsumeToken(token);
+  const tokenValidation = await qrService.validateAndConsumeToken(targetToken);
   if (!tokenValidation.valid) {
     res.status(400).json({
       error: 'Invalid QR Code',

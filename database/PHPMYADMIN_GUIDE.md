@@ -97,3 +97,45 @@ This guide walks you through setting up and managing the **MySQL** database for 
    ```
 4. If MySQL is unreachable or credentials are not yet entered, the backend will safely run in `mock_fallback` mode without crashing.
 
+---
+
+## Step 6: Alternative CLI Migration Runner
+
+If you prefer running migrations from the command line instead of using the phpMyAdmin web interface:
+
+1. Ensure your `.env` contains the valid MySQL connection details.
+2. From the project root, run:
+   ```bash
+   npm --prefix backend run db:migrate
+   ```
+3. The migration runner will execute `database/schema.sql` and `database/seed.sql` in sequence, verifying all tables and initial records.
+
+---
+
+## Step 7: Inspecting & Auditing Data in phpMyAdmin
+
+Once the system is active, you can use phpMyAdmin to inspect live database records across the 6 core tables:
+
+1. **Review Daily Attendance Records (`attendance_sessions`)**:
+   - Navigate to `attendance_poc_db` -> `attendance_sessions` -> click **Browse**.
+   - Review columns: `work_date`, `check_in_at`, `check_out_at`, `status` (`open`, `completed`, `incomplete`).
+
+2. **Audit Administrative Decisions (`audit_logs`)**:
+   - Navigate to `audit_logs` -> click **Browse**.
+   - Review `action` (e.g. `EMPLOYEE_CREATED`, `CORRECTION_APPROVED`, `QR_ROTATED_MANUALLY`), `reason`, and `actor_user_id`.
+
+3. **Verify Punch Events & QR Tokens**:
+   - `attendance_events`: Immutable server-timestamped record of every scan or approved correction.
+   - `qr_tokens`: Logs token usage and single-use status (`active` vs `used`) to verify replay protection.
+
+---
+
+## Step 8: Operational Troubleshooting
+
+| Symptom | Cause | Solution |
+| :--- | :--- | :--- |
+| `Access denied for user 'root'@'localhost'` | Incorrect MySQL password in `.env` | Update `DB_PASSWORD` in `.env` to match your local MySQL root password. |
+| `Unknown database 'attendance_poc_db'` | Database was not created before import | Run Step 1 in phpMyAdmin to create the database first. |
+| `Port 3306 connection refused` | MySQL service is not running | Start MySQL service via XAMPP Control Panel or Windows Services (`services.msc`). |
+| Backend reports `Mock Fallback Store` | `.env` has placeholder credentials | Update `.env` with actual database credentials and restart the backend. |
+

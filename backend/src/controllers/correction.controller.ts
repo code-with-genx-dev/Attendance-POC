@@ -75,14 +75,15 @@ export async function getAdminCorrections(req: AuthenticatedRequest, res: Respon
 export async function reviewCorrection(req: AuthenticatedRequest, res: Response): Promise<void> {
   const admin = req.user!;
   const correctionId = parseInt(req.params.id, 10);
-  const { status, decision_reason } = req.body;
+  const { status, decision, decision_reason } = req.body;
+  const targetStatus = status || decision;
 
   if (isNaN(correctionId)) {
     res.status(400).json({ error: 'Bad Request', message: 'Invalid correction request ID.' });
     return;
   }
 
-  if (!status || !['approved', 'rejected'].includes(status)) {
+  if (!targetStatus || !['approved', 'rejected'].includes(targetStatus)) {
     res.status(400).json({
       error: 'Bad Request',
       message: 'Status must be either "approved" or "rejected".'
@@ -115,7 +116,7 @@ export async function reviewCorrection(req: AuthenticatedRequest, res: Response)
   const cleanReason = decision_reason.trim();
 
   // If approved, update session and add audit-backed attendance event
-  if (status === 'approved') {
+  if (targetStatus === 'approved') {
     const requestedTime = new Date(correction.requested_time);
 
     if (correction.session_id) {
@@ -150,7 +151,7 @@ export async function reviewCorrection(req: AuthenticatedRequest, res: Response)
 
   // Update correction status
   const updated = await dbRepository.reviewCorrection(correctionId, {
-    status,
+    status: targetStatus as 'approved' | 'rejected',
     reviewed_by: admin.id,
     decision_reason: cleanReason
   });
@@ -158,14 +159,14 @@ export async function reviewCorrection(req: AuthenticatedRequest, res: Response)
   // Record audit log
   await dbRepository.createAuditLog({
     actor_user_id: admin.id,
-    action: `CORRECTION_${status.toUpperCase()}`,
+    action: `CORRECTION_${targetStatus.toUpperCase()}`,
     entity_type: 'correction_requests',
     entity_id: correctionId,
     reason: cleanReason
   });
 
   res.json({
-    message: `Correction request ${status} successfully.`,
+    message: `Correction request ${targetStatus} successfully.`,
     correction: updated
   });
 }
