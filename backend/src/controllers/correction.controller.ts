@@ -177,3 +177,4 @@ export async function getExceptions(req: AuthenticatedRequest, res: Response): P
   const summary = await missingPunchService.getExceptionsSummary();
   res.json(summary);
 }
+

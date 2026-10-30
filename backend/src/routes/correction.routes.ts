@@ -20,3 +20,4 @@ router.patch('/admin/corrections/:id', requireAuth, requireAdmin, reviewCorrecti
 router.get('/admin/attendance/exceptions', requireAuth, requireAdmin, getExceptions);
 
 export default router;
+
