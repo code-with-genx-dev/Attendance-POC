@@ -537,6 +537,50 @@ export const dbRepository = {
     };
     mockStore.auditLogs.push(log);
     return log;
+  },
+
+  /**
+   * Admin-facing joined attendance session list with employee info
+   */
+  async getAllSessionsWithEmployees(
+    fromDate?: string,
+    toDate?: string,
+    userId?: number
+  ): Promise<any[]> {
+    if (isConnectedToMySQL && pool) {
+      let sql = `
+        SELECT s.*, u.full_name, u.company_email, u.employee_code, u.role
+        FROM attendance_sessions s
+        JOIN users u ON s.user_id = u.id
+        WHERE 1=1
+      `;
+      const params: any[] = [];
+      if (fromDate) { sql += ' AND s.work_date >= ?'; params.push(fromDate); }
+      if (toDate) { sql += ' AND s.work_date <= ?'; params.push(toDate); }
+      if (userId) { sql += ' AND s.user_id = ?'; params.push(userId); }
+      sql += ' ORDER BY s.work_date DESC, u.full_name ASC';
+      const [rows]: any = await pool.query(sql, params);
+      return rows;
+    }
+
+    return mockStore.attendanceSessions
+      .filter(s => {
+        if (fromDate && s.work_date < fromDate) return false;
+        if (toDate && s.work_date > toDate) return false;
+        if (userId && s.user_id !== userId) return false;
+        return true;
+      })
+      .map(s => {
+        const u = mockStore.users.find(usr => usr.id === s.user_id);
+        return {
+          ...s,
+          full_name: u?.full_name || 'Unknown',
+          company_email: u?.company_email || '',
+          employee_code: u?.employee_code || null,
+          role: u?.role || 'Employee'
+        };
+      })
+      .sort((a, b) => b.work_date.localeCompare(a.work_date));
   }
 };
 
