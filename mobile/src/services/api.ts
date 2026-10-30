@@ -3,8 +3,31 @@
  * Connects to the single unified Express backend
  */
 
-// Default to localhost:5000 for simulator or 10.0.2.2 for Android emulator
-let apiBaseUrl = 'http://localhost:5000/api';
+/**
+ * Dynamically resolves the API base URL:
+ * On physical devices connected via Expo Go, automatically extracts the host computer's
+ * LAN IP address from the Metro bundle scriptURL (or defaults to the local Wi-Fi IP).
+ */
+function resolveInitialApiUrl(): string {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const { NativeModules } = require('react-native');
+    const scriptUrl = NativeModules?.SourceCode?.scriptURL;
+    if (scriptUrl && typeof scriptUrl === 'string') {
+      const match = scriptUrl.match(/https?:\/\/([^/:]+)/);
+      if (match && match[1] && match[1] !== 'localhost' && match[1] !== '127.0.0.1') {
+        return `http://${match[1]}:5000/api`;
+      }
+    }
+  } catch {
+    // In Node test environment or native modules unavailable
+  }
+
+  // Fallback to local Wi-Fi LAN IP (or localhost if not in network)
+  return 'http://192.168.1.49:5000/api';
+}
+
+let apiBaseUrl = resolveInitialApiUrl();
 let authToken: string | null = null;
 
 export function setApiBaseUrl(url: string) {

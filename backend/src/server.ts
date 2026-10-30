@@ -3,12 +3,13 @@ import { config } from './config';
 
 const PORT = config.port;
 
-const server = app.listen(PORT, () => {
+const server = app.listen(PORT, '0.0.0.0', () => {
   console.log('====================================================');
-  console.log(`🚀 Attendance Automation API running on port ${PORT}`);
+  console.log(`🚀 Attendance Automation API running on port ${PORT} (0.0.0.0)`);
   console.log(`🌍 Environment: ${config.env}`);
   console.log(`🕒 Office Timezone: ${config.attendance.timezone}`);
-  console.log(`📊 Health Endpoint: http://localhost:${PORT}/api/health`);
+  console.log(`📊 Local Health: http://localhost:${PORT}/api/health`);
+  console.log(`📱 LAN Mobile URL: http://192.168.1.49:${PORT}/api`);
   console.log(`💾 Database Status: ${config.db.statusMessage}`);
   console.log('====================================================');
 });

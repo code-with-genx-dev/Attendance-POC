@@ -28,7 +28,13 @@ export function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
       const res = await api.login(email.trim(), password);
       onLoginSuccess(res);
     } catch (err: any) {
-      setError(err.message || 'Login failed. Please check your credentials.');
+      let msg = err.message || 'Login failed. Please check your credentials.';
+      const lower = msg.toLowerCase();
+      if (lower.includes('connect') || lower.includes('network') || lower.includes('fetch failed')) {
+        msg = `Cannot reach server at ${serverUrl}.\nEnsure your phone and PC are on the same Wi-Fi and the backend is running.`;
+        setShowConfig(true);
+      }
+      setError(msg);
     } finally {
       setLoading(false);
     }
