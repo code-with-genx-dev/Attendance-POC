@@ -16,6 +16,7 @@
       }
     },
     "android": {
+      "package": "com.company.attendancepoc",
       "adaptiveIcon": {
         "backgroundColor": "#172554"
       },
