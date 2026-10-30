@@ -132,3 +132,4 @@ CREATE TABLE `audit_logs` (
   KEY `idx_audit_action` (`action`),
   CONSTRAINT `fk_audit_actor` FOREIGN KEY (`actor_user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+

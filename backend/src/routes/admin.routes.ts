@@ -13,3 +13,4 @@ router.get('/admin/attendance', requireAuth, requireAdmin, getAdminAttendance);
 router.get('/admin/reports/export', requireAuth, requireAdmin, exportAttendanceCsv);
 
 export default router;
+

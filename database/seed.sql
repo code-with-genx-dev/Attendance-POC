@@ -17,3 +17,4 @@ ON DUPLICATE KEY UPDATE `full_name` = VALUES(`full_name`);
 INSERT INTO `audit_logs` (`actor_user_id`, `action`, `entity_type`, `entity_id`, `reason`, `created_at`)
 VALUES
   (1, 'SYSTEM_INIT', 'users', 1, 'Initial database schema and default admin seed created', NOW());
+

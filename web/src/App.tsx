@@ -1,132 +1,209 @@
-import React, { useEffect, useState } from 'react';
-import { ShieldCheck, Activity, Database, Clock } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import LoginPage from './components/auth/LoginPage';
+import AppShell from './components/layout/AppShell';
+import TodaySummaryStrip from './components/dashboard/TodaySummaryStrip';
+import AttendanceTable from './components/attendance/AttendanceTable';
+import CorrectionReviewList from './components/corrections/CorrectionReviewList';
+import QrDisplay from './components/qr/QrDisplay';
+import EmployeeList from './components/employees/EmployeeList';
 
-interface HealthData {
+type View = 'dashboard' | 'attendance' | 'corrections' | 'qr-display' | 'employees';
+
+interface User {
+  id: number;
+  company_email: string;
+  full_name: string;
+  role: string;
   status: string;
-  service: string;
-  serverTimestamp: string;
-  officeTimezone: string;
-  currentOfficeTime: string;
-  database: {
-    status: string;
-    mode: string;
-    targetDatabase: string;
-    message: string;
-  };
 }
 
-export function App() {
-  const [health, setHealth] = useState<HealthData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+function getStoredUser(): User | null {
+  try {
+    const raw = localStorage.getItem('attendance_user');
+    return raw ? JSON.parse(raw) : null;
+  } catch { return null; }
+}
 
+export default function App() {
+  const [token, setToken] = useState<string | null>(() => localStorage.getItem('attendance_token'));
+  const [user, setUser] = useState<User | null>(getStoredUser);
+  const [view, setView] = useState<View>('dashboard');
+
+  // Keep user in localStorage for page reloads
   useEffect(() => {
-    fetch('/api/health')
-      .then((res) => {
-        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-        return res.json();
-      })
-      .then((data) => {
-        setHealth(data);
-        setLoading(false);
-      })
-      .catch((err) => {
-        setError(err.message);
-        setLoading(false);
-      });
-  }, []);
+    if (user) localStorage.setItem('attendance_user', JSON.stringify(user));
+    else localStorage.removeItem('attendance_user');
+  }, [user]);
+
+  function handleLogin(newToken: string, newUser: User) {
+    setToken(newToken);
+    setUser(newUser);
+  }
+
+  function handleLogout() {
+    localStorage.removeItem('attendance_token');
+    localStorage.removeItem('attendance_user');
+    setToken(null);
+    setUser(null);
+    setView('dashboard');
+  }
+
+  // Not authenticated
+  if (!token || !user) {
+    return <LoginPage onLogin={handleLogin} />;
+  }
+
+  function renderContent() {
+    switch (view) {
+      case 'dashboard':
+        return <DashboardView onNavigate={setView} />;
+      case 'attendance':
+        return (
+          <section>
+            <PageHeader title="Attendance Records" subtitle="View and filter employee check-in/check-out history" />
+            <AttendanceTable />
+          </section>
+        );
+      case 'corrections':
+        return (
+          <section>
+            <PageHeader title="Correction Requests" subtitle="Review and approve or reject missed-punch requests from employees" />
+            <CorrectionReviewList />
+          </section>
+        );
+      case 'qr-display':
+        return (
+          <section>
+            <PageHeader title="QR Code Station" subtitle="Display this QR code on a screen for employees to scan" />
+            <QrDisplay />
+          </section>
+        );
+      case 'employees':
+        return (
+          <section>
+            <PageHeader title="Employees" subtitle="Manage employee accounts and onboard new team members" />
+            <EmployeeList />
+          </section>
+        );
+      default:
+        return null;
+    }
+  }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
-      {/* Dense Top Bar */}
-      <header className="bg-brand-navy text-white px-4 py-2.5 flex items-center justify-between border-b border-brand-border">
-        <div className="flex items-center space-x-2">
-          <div className="w-2.5 h-2.5 rounded-full bg-brand-primary"></div>
-          <h1 className="font-semibold text-sm tracking-tight">Attendance POC Admin</h1>
-          <span className="text-[11px] bg-blue-950 px-2 py-0.5 rounded text-blue-200 border border-blue-800">
-            Phase 1 Scaffolding
-          </span>
-        </div>
-        <div className="flex items-center space-x-4 text-xs text-blue-200">
-          <div className="flex items-center space-x-1">
-            <Clock className="w-3.5 h-3.5 text-blue-400" />
-            <span>{health ? health.currentOfficeTime : 'Loading server time...'}</span>
-          </div>
-        </div>
-      </header>
+    <AppShell
+      user={user}
+      activeView={view}
+      onNavigate={setView}
+      onLogout={handleLogout}
+    >
+      {renderContent()}
+    </AppShell>
+  );
+}
 
-      {/* Main Content Area */}
-      <main className="flex-1 max-w-6xl w-full mx-auto p-4 space-y-4">
-        {/* Page Title & Breadcrumb */}
-        <div className="flex items-center justify-between border-b border-brand-border pb-2">
-          <div>
-            <h2 className="text-dense-title font-bold text-brand-navy">Architecture & System Health</h2>
-            <p className="text-xs text-brand-muted mt-0.5">
-              Verified single Express API + MySQL database target (BRD v1.1 Minimal Dense Blue UI)
-            </p>
-          </div>
-        </div>
+// ─── Sub-components ───────────────────────────────────────────────────────────
 
-        {/* Dense Status Strip (BRD Section 10 Specification) */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <div className="bg-white border border-brand-border rounded p-3 shadow-xs">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-brand-muted uppercase tracking-wider">Backend API</span>
-              <Activity className="w-4 h-4 text-brand-primary" />
-            </div>
-            <div className="mt-1 text-sm font-semibold text-brand-text">
-              {loading ? 'Connecting...' : error ? 'Offline / Error' : 'Running (Port 5000)'}
-            </div>
-            <div className="text-[11px] text-brand-muted mt-0.5">
-              {health ? `Uptime: ${health.service}` : 'Checking Express service'}
-            </div>
-          </div>
-
-          <div className="bg-white border border-brand-border rounded p-3 shadow-xs">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-brand-muted uppercase tracking-wider">Database Target</span>
-              <Database className="w-4 h-4 text-brand-primary" />
-            </div>
-            <div className="mt-1 text-sm font-semibold text-brand-text">
-              {health?.database.status === 'configured' ? 'MySQL Configured' : 'Safe Mock / Unconfigured'}
-            </div>
-            <div className="text-[11px] text-brand-muted mt-0.5 truncate" title={health?.database.message}>
-              {health ? health.database.message : 'Awaiting credentials via .env'}
-            </div>
-          </div>
-
-          <div className="bg-white border border-brand-border rounded p-3 shadow-xs">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-brand-muted uppercase tracking-wider">Role Access</span>
-              <ShieldCheck className="w-4 h-4 text-brand-primary" />
-            </div>
-            <div className="mt-1 text-sm font-semibold text-brand-text">
-              Strict RBAC (Admin / Employee)
-            </div>
-            <div className="text-[11px] text-brand-muted mt-0.5">
-              Zero unapproved employee fields
-            </div>
-          </div>
-        </div>
-
-        {/* Diagnostic Card */}
-        <div className="bg-white border border-brand-border rounded p-4 space-y-3">
-          <h3 className="text-xs font-semibold uppercase text-brand-navy tracking-wider">
-            Phase 1 Diagnostic Payload
-          </h3>
-          <pre className="bg-slate-900 text-slate-100 p-3 rounded text-xs overflow-x-auto font-mono">
-            {loading ? 'Fetching diagnostics from /api/health...' : JSON.stringify(health || { error }, null, 2)}
-          </pre>
-        </div>
-      </main>
-
-      {/* Footer */}
-      <footer className="border-t border-brand-border bg-white px-4 py-2 text-center text-xs text-brand-muted">
-        Employee Attendance Automation POC • BRD v1.1 • Phase 1 Scaffolding
-      </footer>
+function PageHeader({ title, subtitle }: { title: string; subtitle: string }) {
+  return (
+    <div className="mb-4">
+      <h1 className="text-lg font-bold text-[#172554]">{title}</h1>
+      <p className="text-xs text-gray-500 mt-0.5">{subtitle}</p>
     </div>
   );
 }
 
-export default App;
+function DashboardView({ onNavigate }: { onNavigate: (v: View) => void }) {
+  return (
+    <div>
+      <div className="mb-4">
+        <h1 className="text-lg font-bold text-[#172554]">Dashboard</h1>
+        <p className="text-xs text-gray-500 mt-0.5">Today's attendance overview</p>
+      </div>
 
+      <TodaySummaryStrip />
+
+      {/* Quick Action Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+        <QuickCard
+          title="Attendance"
+          desc="View all records"
+          icon={
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round"
+                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+            </svg>
+          }
+          onClick={() => onNavigate('attendance')}
+        />
+        <QuickCard
+          title="QR Code"
+          desc="Show scan screen"
+          icon={
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round"
+                d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+            </svg>
+          }
+          onClick={() => onNavigate('qr-display')}
+        />
+        <QuickCard
+          title="Corrections"
+          desc="Review requests"
+          icon={
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round"
+                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+            </svg>
+          }
+          onClick={() => onNavigate('corrections')}
+        />
+        <QuickCard
+          title="Employees"
+          desc="Manage & onboard"
+          icon={
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round"
+                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+            </svg>
+          }
+          onClick={() => onNavigate('employees')}
+        />
+      </div>
+
+      {/* Info Banner */}
+      <div className="bg-[#172554] rounded-xl p-4 text-white">
+        <div className="flex items-start gap-3">
+          <div className="w-8 h-8 rounded-lg bg-[#1D4ED8] flex items-center justify-center shrink-0">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <div>
+            <div className="text-sm font-semibold mb-0.5">Employee Attendance Automation — POC</div>
+            <div className="text-xs text-blue-300">
+              Timezone: Asia/Kolkata · Cutoff: 14:00 · QR rotates every 30s with 15s grace window
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function QuickCard({
+  title, desc, icon, onClick
+}: { title: string; desc: string; icon: React.ReactNode; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className="bg-white border border-[#E2E8F0] rounded-xl p-4 text-left hover:border-[#1D4ED8] hover:shadow-sm transition-all group"
+    >
+      <div className="w-9 h-9 rounded-lg bg-[#EFF6FF] group-hover:bg-[#1D4ED8] flex items-center justify-center text-[#1D4ED8] group-hover:text-white transition-colors mb-3">
+        {icon}
+      </div>
+      <div className="text-sm font-semibold text-[#172554]">{title}</div>
+      <div className="text-[11px] text-gray-400 mt-0.5">{desc}</div>
+    </button>
+  );
+}

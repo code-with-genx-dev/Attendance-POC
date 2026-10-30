@@ -2,6 +2,7 @@
   "name": "attendance-poc-web",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
   "description": "React Admin Web Dashboard for Employee Attendance Automation",
   "scripts": {
     "dev": "vite",

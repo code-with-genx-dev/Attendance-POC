@@ -96,3 +96,4 @@ This guide walks you through setting up and managing the **MySQL** database for 
    }
    ```
 4. If MySQL is unreachable or credentials are not yet entered, the backend will safely run in `mock_fallback` mode without crashing.
+

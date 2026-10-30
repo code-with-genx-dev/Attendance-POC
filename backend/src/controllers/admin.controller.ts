@@ -142,3 +142,4 @@ export async function exportAttendanceCsv(req: AuthenticatedRequest, res: Respon
   res.setHeader('Content-Disposition', `attachment; filename=attendance_${fromDate || 'all'}_to_${toDate || 'all'}.csv`);
   res.send(csv);
 }
+
