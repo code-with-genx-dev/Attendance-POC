@@ -7,7 +7,9 @@
     "build": "tsc",
     "start": "node dist/server.js",
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
-    "test": "node -e \"console.log('Backend test placeholder')\""
+    "db:migrate": "ts-node-dev src/db/migrate.ts",
+    "test:db": "ts-node test/db.test.ts",
+    "test": "npm run test:db"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

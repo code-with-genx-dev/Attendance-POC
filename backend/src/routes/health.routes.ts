@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { config } from '../config';
+import { getDatabaseStatus } from '../db';
 
 const router = Router();
 
@@ -17,6 +18,8 @@ router.get('/health', (req: Request, res: Response) => {
     formattedTime = now.toLocaleString();
   }
 
+  const dbStatus = getDatabaseStatus();
+
   res.json({
     status: 'ok',
     service: 'Employee Attendance Automation API',
@@ -27,14 +30,15 @@ router.get('/health', (req: Request, res: Response) => {
     officeTimezone: config.attendance.timezone,
     currentOfficeTime: formattedTime,
     database: {
-      status: config.db.isConfigured ? 'configured' : 'mock_fallback',
-      mode: config.db.isConfigured ? 'MySQL (Live Connection Target)' : 'Safe Local Mock (Awaiting User phpMyAdmin Credentials)',
-      targetDatabase: config.db.database,
-      targetHost: config.db.host,
-      message: config.db.statusMessage
+      status: dbStatus.isConnected ? 'connected' : (dbStatus.isConfigured ? 'connection_pending_or_error' : 'mock_fallback'),
+      mode: dbStatus.mode,
+      targetDatabase: dbStatus.targetDatabase,
+      targetHost: dbStatus.targetHost,
+      targetUser: dbStatus.targetUser,
+      lastError: dbStatus.lastError,
+      message: dbStatus.statusMessage
     }
   });
 });
 
 export default router;
-
