@@ -151,12 +151,54 @@ export const dbRepository = {
   async getTodaySession(userId: number, workDate: string): Promise<AttendanceSessionRecord | null> {
     if (isConnectedToMySQL && pool) {
       const [rows]: any = await pool.query(
-        'SELECT * FROM attendance_sessions WHERE user_id = ? AND work_date = ? LIMIT 1',
+        'SELECT * FROM attendance_sessions WHERE user_id = ? AND work_date = ? ORDER BY id DESC LIMIT 1',
         [userId, workDate]
       );
       return rows[0] || null;
     }
-    return mockStore.attendanceSessions.find(s => s.user_id === userId && s.work_date === workDate) || null;
+    const matching = mockStore.attendanceSessions.filter(s => s.user_id === userId && s.work_date === workDate);
+    return matching.length > 0 ? matching[matching.length - 1] : null;
+  },
+
+  async getOpenSessionByUser(userId: number): Promise<AttendanceSessionRecord | null> {
+    if (isConnectedToMySQL && pool) {
+      const [rows]: any = await pool.query(
+        'SELECT * FROM attendance_sessions WHERE user_id = ? AND status = "open" ORDER BY id DESC LIMIT 1',
+        [userId]
+      );
+      return rows[0] || null;
+    }
+    const matching = mockStore.attendanceSessions.filter(s => s.user_id === userId && s.status === 'open');
+    return matching.length > 0 ? matching[matching.length - 1] : null;
+  },
+
+  async getSessionsByUser(userId: number, fromDate?: string, toDate?: string): Promise<AttendanceSessionRecord[]> {
+    if (isConnectedToMySQL && pool) {
+      let sql = 'SELECT * FROM attendance_sessions WHERE user_id = ?';
+      const params: any[] = [userId];
+
+      if (fromDate) {
+        sql += ' AND work_date >= ?';
+        params.push(fromDate);
+      }
+      if (toDate) {
+        sql += ' AND work_date <= ?';
+        params.push(toDate);
+      }
+      sql += ' ORDER BY work_date DESC, id DESC';
+
+      const [rows]: any = await pool.query(sql, params);
+      return rows;
+    }
+
+    return mockStore.attendanceSessions
+      .filter(s => {
+        if (s.user_id !== userId) return false;
+        if (fromDate && s.work_date < fromDate) return false;
+        if (toDate && s.work_date > toDate) return false;
+        return true;
+      })
+      .sort((a, b) => b.work_date.localeCompare(a.work_date) || b.id - a.id);
   },
 
   async createSession(data: {
@@ -236,6 +278,17 @@ export const dbRepository = {
     };
     mockStore.attendanceEvents.push(newEvent);
     return newEvent;
+  },
+
+  async getAttendanceEventByIdempotency(idempotencyKey: string): Promise<AttendanceEventRecord | null> {
+    if (isConnectedToMySQL && pool) {
+      const [rows]: any = await pool.query(
+        'SELECT * FROM attendance_events WHERE idempotency_key = ? LIMIT 1',
+        [idempotencyKey]
+      );
+      return rows[0] || null;
+    }
+    return mockStore.attendanceEvents.find(e => e.idempotency_key === idempotencyKey) || null;
   },
 
   // --- QR TOKENS ---

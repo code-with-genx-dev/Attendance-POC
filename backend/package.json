@@ -11,7 +11,8 @@
     "test:db": "ts-node test/db.test.ts",
     "test:auth": "ts-node test/auth.test.ts",
     "test:qr": "ts-node test/qr.test.ts",
-    "test": "npm run test:db && npm run test:auth && npm run test:qr"
+    "test:attendance": "ts-node test/attendance.test.ts",
+    "test": "npm run test:db && npm run test:auth && npm run test:qr && npm run test:attendance"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

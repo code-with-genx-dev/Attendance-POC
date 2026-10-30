@@ -11,3 +11,4 @@ router.get('/qr/current', getCurrentQr);
 router.post('/admin/qr/rotate', requireAuth, requireAdmin, rotateQr);
 
 export default router;
+

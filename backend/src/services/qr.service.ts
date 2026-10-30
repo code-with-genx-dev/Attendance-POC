@@ -170,3 +170,4 @@ export class QrService {
 }
 
 export const qrService = new QrService();
+

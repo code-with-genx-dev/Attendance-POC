@@ -40,3 +40,4 @@ export async function rotateQr(req: AuthenticatedRequest, res: Response): Promis
     });
   }
 }
+
