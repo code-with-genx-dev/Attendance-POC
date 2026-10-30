@@ -1,0 +1,10 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply text-brand-text bg-slate-50 text-[13px] leading-tight;
+  }
+}
+

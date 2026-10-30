@@ -1,0 +1,28 @@
+{
+  "name": "attendance-poc-root",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Employee Attendance Automation POC - Monorepo root",
+  "workspaces": [
+    "backend",
+    "web"
+  ],
+  "scripts": {
+    "start:backend": "npm --prefix backend run dev",
+    "build:backend": "npm --prefix backend run build",
+    "start:web": "npm --prefix web run dev",
+    "build:web": "npm --prefix web run build",
+    "start:mobile": "npm --prefix mobile start"
+  },
+  "keywords": [
+    "attendance",
+    "qr-code",
+    "mysql",
+    "express",
+    "react",
+    "react-native"
+  ],
+  "author": "",
+  "license": "ISC"
+}
+
