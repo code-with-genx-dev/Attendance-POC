@@ -247,6 +247,65 @@ export const dbRepository = {
     }
   },
 
+  async getSessionById(sessionId: number): Promise<AttendanceSessionRecord | null> {
+    if (isConnectedToMySQL && pool) {
+      const [rows]: any = await pool.query('SELECT * FROM attendance_sessions WHERE id = ? LIMIT 1', [sessionId]);
+      return rows[0] || null;
+    }
+    return mockStore.attendanceSessions.find(s => s.id === sessionId) || null;
+  },
+
+  async updateSessionCheckIn(sessionId: number, checkInAt: Date): Promise<void> {
+    if (isConnectedToMySQL && pool) {
+      await pool.query(
+        'UPDATE attendance_sessions SET check_in_at = ?, updated_at = NOW() WHERE id = ?',
+        [checkInAt, sessionId]
+      );
+      return;
+    }
+    const session = mockStore.attendanceSessions.find(s => s.id === sessionId);
+    if (session) {
+      session.check_in_at = checkInAt;
+      session.updated_at = new Date();
+    }
+  },
+
+  async markSessionIncomplete(sessionId: number): Promise<void> {
+    if (isConnectedToMySQL && pool) {
+      await pool.query(
+        'UPDATE attendance_sessions SET status = "incomplete", updated_at = NOW() WHERE id = ?',
+        [sessionId]
+      );
+      return;
+    }
+    const session = mockStore.attendanceSessions.find(s => s.id === sessionId);
+    if (session) {
+      session.status = 'incomplete';
+      session.updated_at = new Date();
+    }
+  },
+
+  async getAllSessionsByDate(workDate: string): Promise<AttendanceSessionRecord[]> {
+    if (isConnectedToMySQL && pool) {
+      const [rows]: any = await pool.query(
+        'SELECT * FROM attendance_sessions WHERE work_date = ?',
+        [workDate]
+      );
+      return rows;
+    }
+    return mockStore.attendanceSessions.filter(s => s.work_date === workDate);
+  },
+
+  async getAllActiveEmployees(): Promise<UserRecord[]> {
+    if (isConnectedToMySQL && pool) {
+      const [rows]: any = await pool.query(
+        'SELECT * FROM users WHERE status != "inactive" ORDER BY full_name ASC'
+      );
+      return rows;
+    }
+    return mockStore.users.filter(u => u.status !== 'inactive');
+  },
+
   // --- ATTENDANCE EVENTS ---
   async createAttendanceEvent(data: {
     user_id: number;
@@ -332,6 +391,121 @@ export const dbRepository = {
       token.used_at = new Date();
       token.status = 'used';
     }
+  },
+
+  // --- CORRECTION REQUESTS ---
+  async createCorrectionRequest(data: {
+    user_id: number;
+    session_id?: number | null;
+    punch_type: 'check_in' | 'check_out';
+    requested_time: Date;
+    reason: string;
+  }): Promise<CorrectionRequestRecord> {
+    if (isConnectedToMySQL && pool) {
+      const [result]: any = await pool.query(
+        `INSERT INTO correction_requests (user_id, session_id, punch_type, requested_time, reason, status)
+         VALUES (?, ?, ?, ?, ?, "pending")`,
+        [data.user_id, data.session_id || null, data.punch_type, data.requested_time, data.reason]
+      );
+      const [rows]: any = await pool.query('SELECT * FROM correction_requests WHERE id = ?', [result.insertId]);
+      return rows[0];
+    }
+
+    const newCorrection: CorrectionRequestRecord = {
+      id: mockStore.getNextCorrectionId(),
+      user_id: data.user_id,
+      session_id: data.session_id || null,
+      punch_type: data.punch_type,
+      requested_time: data.requested_time,
+      reason: data.reason,
+      status: 'pending',
+      reviewed_by: null,
+      reviewed_at: null,
+      decision_reason: null,
+      created_at: new Date(),
+      updated_at: new Date()
+    };
+    mockStore.correctionRequests.push(newCorrection);
+    return newCorrection;
+  },
+
+  async getCorrectionById(id: number): Promise<CorrectionRequestRecord | null> {
+    if (isConnectedToMySQL && pool) {
+      const [rows]: any = await pool.query('SELECT * FROM correction_requests WHERE id = ? LIMIT 1', [id]);
+      return rows[0] || null;
+    }
+    return mockStore.correctionRequests.find(c => c.id === id) || null;
+  },
+
+  async getCorrections(filter?: { status?: string; user_id?: number }): Promise<any[]> {
+    if (isConnectedToMySQL && pool) {
+      let sql = `
+        SELECT c.*, u.full_name AS employee_name, u.company_email AS employee_email, u.employee_code,
+               r.full_name AS reviewer_name
+        FROM correction_requests c
+        JOIN users u ON c.user_id = u.id
+        LEFT JOIN users r ON c.reviewed_by = r.id
+        WHERE 1=1
+      `;
+      const params: any[] = [];
+      if (filter?.status) {
+        sql += ' AND c.status = ?';
+        params.push(filter.status);
+      }
+      if (filter?.user_id) {
+        sql += ' AND c.user_id = ?';
+        params.push(filter.user_id);
+      }
+      sql += ' ORDER BY c.created_at DESC';
+      const [rows]: any = await pool.query(sql, params);
+      return rows;
+    }
+
+    return mockStore.correctionRequests
+      .filter(c => {
+        if (filter?.status && c.status !== filter.status) return false;
+        if (filter?.user_id && c.user_id !== filter.user_id) return false;
+        return true;
+      })
+      .map(c => {
+        const u = mockStore.users.find(usr => usr.id === c.user_id);
+        const r = c.reviewed_by ? mockStore.users.find(usr => usr.id === c.reviewed_by) : null;
+        return {
+          ...c,
+          employee_name: u?.full_name || 'Unknown',
+          employee_email: u?.company_email || 'Unknown',
+          employee_code: u?.employee_code || null,
+          reviewer_name: r?.full_name || null
+        };
+      })
+      .sort((a, b) => b.created_at.getTime() - a.created_at.getTime());
+  },
+
+  async reviewCorrection(id: number, data: {
+    status: 'approved' | 'rejected';
+    reviewed_by: number;
+    decision_reason: string;
+  }): Promise<CorrectionRequestRecord | null> {
+    if (isConnectedToMySQL && pool) {
+      await pool.query(
+        `UPDATE correction_requests
+         SET status = ?, reviewed_by = ?, reviewed_at = NOW(), decision_reason = ?, updated_at = NOW()
+         WHERE id = ?`,
+        [data.status, data.reviewed_by, data.decision_reason, id]
+      );
+      return this.getCorrectionById(id);
+    }
+
+    const item = mockStore.correctionRequests.find(c => c.id === id);
+    if (item) {
+      item.status = data.status;
+      item.reviewed_by = data.reviewed_by;
+      item.reviewed_at = new Date();
+      item.decision_reason = data.decision_reason;
+      item.updated_at = new Date();
+      return item;
+    }
+    return null;
   },
 
   // --- AUDIT LOGS ---

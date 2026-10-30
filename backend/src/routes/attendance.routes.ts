@@ -11,3 +11,4 @@ router.post('/attendance/scan', requireAuth, scanAttendance);
 router.get('/attendance/me', requireAuth, getMyAttendance);
 
 export default router;
+

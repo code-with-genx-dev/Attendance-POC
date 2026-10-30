@@ -159,3 +159,4 @@ export async function getMyAttendance(req: AuthenticatedRequest, res: Response):
     officeTimezone: config.attendance.timezone
   });
 }
+
