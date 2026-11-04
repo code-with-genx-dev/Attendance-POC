@@ -59,6 +59,8 @@ export const authApi = {
   login: (company_email: string, password: string) =>
     request<LoginResponse>('POST', '/auth/login', { company_email, password }),
   me: () => request<{ user: LoginResponse['user'] }>('GET', '/auth/me'),
+  updateProfile: (full_name: string) =>
+    request('PATCH', '/auth/profile', { full_name }),
   changePassword: (current_password: string, new_password: string) =>
     request('POST', '/auth/change-password', { current_password, new_password })
 };

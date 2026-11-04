@@ -1,13 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import LoginPage from './components/auth/LoginPage';
 import AppShell from './components/layout/AppShell';
-import TodaySummaryStrip from './components/dashboard/TodaySummaryStrip';
+import Dashboard from './components/dashboard/Dashboard';
 import AttendanceTable from './components/attendance/AttendanceTable';
 import CorrectionReviewList from './components/corrections/CorrectionReviewList';
 import QrDisplay from './components/qr/QrDisplay';
+import OfficeQrDisplay from './components/qr/OfficeQrDisplay';
 import EmployeeList from './components/employees/EmployeeList';
-
-type View = 'dashboard' | 'attendance' | 'corrections' | 'qr-display' | 'employees';
+import ProfilePage from './components/profile/ProfilePage';
 
 interface User {
   id: number;
@@ -24,10 +25,33 @@ function getStoredUser(): User | null {
   } catch { return null; }
 }
 
-export default function App() {
-  const [token, setToken] = useState<string | null>(() => localStorage.getItem('attendance_token'));
+function UnderConstruction({ title, description }: { title: string; description: string }) {
+  return (
+    <div className="flex items-center justify-center min-h-[60vh]">
+      <div className="text-center max-w-md">
+        <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-amber-100 flex items-center justify-center">
+          <svg className="w-10 h-10 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M11.42 15.17L17.25 21A2.652 2.652 0 0021 17.25l-5.877-5.877M11.42 15.17l2.496-3.03c.317-.384.74-.626 1.208-.766M11.42 15.17l-4.655 5.653a2.548 2.548 0 11-3.586-3.586l6.837-5.63m5.108-.233c.55-.164 1.163-.188 1.743-.14a4.5 4.5 0 004.486-6.336l-3.276 3.277a3.004 3.004 0 01-2.25-2.25l3.276-3.276a4.5 4.5 0 00-6.336 4.486c.091 1.076-.071 2.264-.904 2.95l-.102.085m-1.745 1.437L5.909 7.5H4.5L2.25 3.75l1.5-1.5L7.5 4.5v1.409l4.26 4.26m-1.745 1.437l1.745-1.437m6.615 8.206L15.75 15.75M4.867 19.125h.008v.008h-.008v-.008z" />
+          </svg>
+        </div>
+        <h2 className="text-2xl font-bold text-[#172554] mb-2">{title}</h2>
+        <p className="text-sm text-gray-500 mb-4">{description}</p>
+        <div className="inline-flex items-center gap-2 px-4 py-2 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-700">
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span className="font-medium">Coming Soon</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Protected route wrapper
+function ProtectedRoutes() {
   const [user, setUser] = useState<User | null>(getStoredUser);
-  const [view, setView] = useState<View>('dashboard');
+  const navigate = useNavigate();
+  const location = useLocation();
 
   // Keep user in localStorage for page reloads
   useEffect(() => {
@@ -35,175 +59,76 @@ export default function App() {
     else localStorage.removeItem('attendance_user');
   }, [user]);
 
-  function handleLogin(newToken: string, newUser: User) {
-    setToken(newToken);
-    setUser(newUser);
+  // Check if user is authenticated
+  const token = localStorage.getItem('attendance_token');
+  
+  if (!token || !user) {
+    return <Navigate to="/login" replace />;
   }
 
   function handleLogout() {
     localStorage.removeItem('attendance_token');
     localStorage.removeItem('attendance_user');
-    setToken(null);
     setUser(null);
-    setView('dashboard');
+    navigate('/login');
   }
 
-  // Not authenticated
-  if (!token || !user) {
-    return <LoginPage onLogin={handleLogin} />;
-  }
+  // Map URL path to view ID for AppShell
+  const pathToView = (path: string) => {
+    if (path === '/' || path === '/dashboard') return 'dashboard';
+    if (path.startsWith('/attendance')) return 'attendance';
+    if (path.startsWith('/corrections')) return 'corrections';
+    if (path.startsWith('/qr')) return 'qr-display';
+    if (path.startsWith('/employees')) return 'employees';
+    if (path.startsWith('/profile')) return 'profile';
+    if (path.startsWith('/timesheet')) return 'timesheet';
+    if (path.startsWith('/settings')) return 'settings';
+    return 'dashboard';
+  };
 
-  function renderContent() {
-    switch (view) {
-      case 'dashboard':
-        return <DashboardView onNavigate={setView} />;
-      case 'attendance':
-        return (
-          <section>
-            <PageHeader title="Attendance Records" subtitle="View and filter employee check-in/check-out history" />
-            <AttendanceTable />
-          </section>
-        );
-      case 'corrections':
-        return (
-          <section>
-            <PageHeader title="Correction Requests" subtitle="Review and approve or reject missed-punch requests from employees" />
-            <CorrectionReviewList />
-          </section>
-        );
-      case 'qr-display':
-        return (
-          <section>
-            <PageHeader title="QR Code Station" subtitle="Display this QR code on a screen for employees to scan" />
-            <QrDisplay />
-          </section>
-        );
-      case 'employees':
-        return (
-          <section>
-            <PageHeader title="Employees" subtitle="Manage employee accounts and onboard new team members" />
-            <EmployeeList />
-          </section>
-        );
-      default:
-        return null;
-    }
-  }
+  const activeView = pathToView(location.pathname);
 
   return (
     <AppShell
       user={user}
-      activeView={view}
-      onNavigate={setView}
+      activeView={activeView}
       onLogout={handleLogout}
     >
-      {renderContent()}
+      <Routes>
+        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/attendance" element={<AttendanceTable />} />
+        <Route path="/corrections" element={<CorrectionReviewList />} />
+        <Route path="/qr" element={<QrDisplay />} />
+        <Route path="/employees" element={<EmployeeList />} />
+        <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/timesheet" element={<UnderConstruction title="Timesheet" description="Employee timesheet management and approval workflow" />} />
+        <Route path="/settings" element={<UnderConstruction title="Settings" description="System configuration and preferences" />} />
+        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      </Routes>
     </AppShell>
   );
 }
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
+export default function App() {
+  const [token] = useState<string | null>(() => localStorage.getItem('attendance_token'));
+  const [user] = useState<User | null>(getStoredUser);
 
-function PageHeader({ title, subtitle }: { title: string; subtitle: string }) {
+  function handleLogin(newToken: string, newUser: User) {
+    localStorage.setItem('attendance_token', newToken);
+    localStorage.setItem('attendance_user', JSON.stringify(newUser));
+    window.location.href = '/dashboard';
+  }
+
   return (
-    <div className="mb-4">
-      <h1 className="text-lg font-bold text-[#172554]">{title}</h1>
-      <p className="text-xs text-gray-500 mt-0.5">{subtitle}</p>
-    </div>
-  );
-}
-
-function DashboardView({ onNavigate }: { onNavigate: (v: View) => void }) {
-  return (
-    <div>
-      <div className="mb-4">
-        <h1 className="text-lg font-bold text-[#172554]">Dashboard</h1>
-        <p className="text-xs text-gray-500 mt-0.5">Today's attendance overview</p>
-      </div>
-
-      <TodaySummaryStrip />
-
-      {/* Quick Action Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-        <QuickCard
-          title="Attendance"
-          desc="View all records"
-          icon={
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round"
-                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-            </svg>
-          }
-          onClick={() => onNavigate('attendance')}
-        />
-        <QuickCard
-          title="QR Code"
-          desc="Show scan screen"
-          icon={
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round"
-                d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
-            </svg>
-          }
-          onClick={() => onNavigate('qr-display')}
-        />
-        <QuickCard
-          title="Corrections"
-          desc="Review requests"
-          icon={
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round"
-                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-            </svg>
-          }
-          onClick={() => onNavigate('corrections')}
-        />
-        <QuickCard
-          title="Employees"
-          desc="Manage & onboard"
-          icon={
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round"
-                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-            </svg>
-          }
-          onClick={() => onNavigate('employees')}
-        />
-      </div>
-
-      {/* Info Banner */}
-      <div className="bg-[#172554] rounded-xl p-4 text-white">
-        <div className="flex items-start gap-3">
-          <div className="w-8 h-8 rounded-lg bg-[#1D4ED8] flex items-center justify-center shrink-0">
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </div>
-          <div>
-            <div className="text-sm font-semibold mb-0.5">Employee Attendance Automation — POC</div>
-            <div className="text-xs text-blue-300">
-              Timezone: Asia/Kolkata · Cutoff: 14:00 · QR rotates every 30s with 15s grace window
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function QuickCard({
-  title, desc, icon, onClick
-}: { title: string; desc: string; icon: React.ReactNode; onClick: () => void }) {
-  return (
-    <button
-      onClick={onClick}
-      className="bg-white border border-[#E2E8F0] rounded-xl p-4 text-left hover:border-[#1D4ED8] hover:shadow-sm transition-all group"
-    >
-      <div className="w-9 h-9 rounded-lg bg-[#EFF6FF] group-hover:bg-[#1D4ED8] flex items-center justify-center text-[#1D4ED8] group-hover:text-white transition-colors mb-3">
-        {icon}
-      </div>
-      <div className="text-sm font-semibold text-[#172554]">{title}</div>
-      <div className="text-[11px] text-gray-400 mt-0.5">{desc}</div>
-    </button>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/login" element={
+          token && user ? <Navigate to="/dashboard" replace /> : <LoginPage onLogin={handleLogin} />
+        } />
+        <Route path="/office-qr" element={<OfficeQrDisplay />} />
+        <Route path="/*" element={<ProtectedRoutes />} />
+      </Routes>
+    </BrowserRouter>
   );
 }

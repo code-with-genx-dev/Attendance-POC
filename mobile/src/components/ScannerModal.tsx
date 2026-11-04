@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, Modal, TouchableOpacity, TextInput, ActivityIndicator, Alert } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Camera, CameraView } from 'expo-camera';
 import { colors } from '../theme/colors';
 import { api, ScanResponse } from '../services/api';
@@ -11,6 +12,7 @@ interface ScannerModalProps {
 }
 
 export function ScannerModal({ visible, onClose, onScanComplete }: ScannerModalProps) {
+  const insets = useSafeAreaInsets();
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [scanning, setScanning] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -67,7 +69,7 @@ export function ScannerModal({ visible, onClose, onScanComplete }: ScannerModalP
     <Modal visible={visible} animationType="slide" transparent={false}>
       <View style={styles.container}>
         {/* Top Bar */}
-        <View style={styles.topBar}>
+        <View style={[styles.topBar, { paddingTop: insets.top + 14 }]}>
           <Text style={styles.topBarTitle}>Scan Office Attendance QR</Text>
           <TouchableOpacity onPress={onClose} style={styles.closeButton}>
             <Text style={styles.closeButtonText}>Close</Text>
@@ -170,7 +172,6 @@ const styles = StyleSheet.create({
   },
   topBar: {
     backgroundColor: colors.navy,
-    paddingTop: 45,
     paddingBottom: 14,
     paddingHorizontal: 16,
     flexDirection: 'row',

@@ -19,9 +19,9 @@ export default function TodaySummaryStrip() {
   }, []);
 
   async function load() {
-    const today = new Date().toISOString().split('T')[0];
+    const dateStr = new Date().toISOString().split('T')[0];
     try {
-      const res = await attendanceApi.list({ from: today, to: today });
+      const res = await attendanceApi.list({ from: dateStr, to: dateStr });
       const sessions = res.sessions;
       const completed = sessions.filter(s => s.status === 'completed').length;
       const open = sessions.filter(s => s.status === 'open').length;
@@ -40,9 +40,9 @@ export default function TodaySummaryStrip() {
 
   if (loading) {
     return (
-      <div className="grid grid-cols-3 gap-3 mb-4">
+      <div className="grid grid-cols-3 gap-3 mb-3">
         {[0, 1, 2].map(i => (
-          <div key={i} className="bg-white rounded-xl border border-[#E2E8F0] p-4 animate-pulse h-24" />
+          <div key={i} className="bg-white rounded-lg border border-[#E2E8F0] p-3 animate-pulse h-20" />
         ))}
       </div>
     );
@@ -50,16 +50,11 @@ export default function TodaySummaryStrip() {
 
   if (error) {
     return (
-      <div className="mb-4 px-4 py-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-700 text-sm">
+      <div className="mb-3 px-3 py-2 rounded-lg bg-amber-50 border border-amber-200 text-amber-700 text-xs">
         ⚠️ Summary unavailable: {error}
       </div>
     );
   }
-
-  const today = new Date().toLocaleDateString('en-IN', {
-    timeZone: 'Asia/Kolkata',
-    weekday: 'long', day: 'numeric', month: 'long'
-  });
 
   const cards = [
     {
@@ -95,20 +90,16 @@ export default function TodaySummaryStrip() {
   ];
 
   return (
-    <div className="mb-4">
-      <div className="flex items-center justify-between mb-2">
-        <h2 className="text-sm font-semibold text-[#172554]">Today's Overview</h2>
-        <span className="text-xs text-gray-500">{today}</span>
-      </div>
+    <div className="mb-3">
       <div className="grid grid-cols-3 gap-3">
         {cards.map(card => (
-          <div key={card.label} className={`rounded-xl border ${card.border} ${card.bg} p-4`}>
+          <div key={card.label} className={`rounded-lg border ${card.border} ${card.bg} p-3`}>
             <div className="flex items-center gap-1.5 mb-1">
               <span className={`inline-block w-2 h-2 rounded-full ${card.dot}`} />
               <span className={`text-xs font-medium ${card.text}`}>{card.label}</span>
             </div>
             <div className={`text-3xl font-bold ${card.num}`}>{card.value}</div>
-            <div className={`text-xs mt-1 ${card.text} opacity-80`}>{card.sub}</div>
+            <div className={`text-xs mt-0.5 ${card.text} opacity-80`}>{card.sub}</div>
           </div>
         ))}
       </div>

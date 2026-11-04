@@ -1,7 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { verifyToken, TokenPayload } from '../utils/auth';
-import { dbRepository } from '../db';
-import { UserRecord } from '../db/mockStore';
+import { dbRepository, UserRecord } from '../db';
 
 export interface AuthenticatedRequest extends Request {
   user?: UserRecord;

@@ -121,7 +121,7 @@ export default function EmployeeList() {
 
       {/* New credential banner */}
       {newCred && (
-        <div className="mb-3 bg-green-50 border border-green-200 rounded-xl p-4 shadow-sm">
+        <div className="mb-3 bg-green-50 border border-green-200 rounded-lg p-3 shadow-sm">
           <div className="flex items-start justify-between">
             <div>
               <div className="text-sm font-semibold text-green-800 mb-1">
@@ -130,12 +130,12 @@ export default function EmployeeList() {
               <div className="text-xs text-green-700 mb-2">
                 Share these credentials securely — temporary password is shown only once.
               </div>
-              <div className="bg-white border border-green-200 rounded-lg px-3 py-2 text-xs font-mono text-[#172554] space-y-0.5">
+              <div className="bg-white border border-green-200 rounded px-2.5 py-1.5 text-xs font-mono text-[#172554] space-y-0.5">
                 <div><span className="text-gray-500">Email:</span> {newCred.employee.company_email}</div>
                 <div><span className="text-gray-500">Temp Password:</span> <span className="font-bold text-[#1D4ED8]">{newCred.tempPassword}</span></div>
               </div>
             </div>
-            <button onClick={() => setNewCred(null)} className="text-green-600 hover:text-green-800 ml-3 mt-0.5">
+            <button onClick={() => setNewCred(null)} className="text-green-600 hover:text-green-800 ml-2">
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
               </svg>
@@ -149,48 +149,48 @@ export default function EmployeeList() {
       )}
 
       {/* Table */}
-      <div className="bg-white rounded-xl border border-[#E2E8F0] overflow-hidden shadow-sm">
+      <div className="bg-white rounded-lg border border-[#E2E8F0] overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full text-[13px]">
             <thead>
               <tr className="bg-[#172554] text-white">
-                <th className="text-left px-3 py-2.5 font-medium text-xs tracking-wide">Name</th>
-                <th className="text-left px-3 py-2.5 font-medium text-xs tracking-wide hidden md:table-cell">Code</th>
-                <th className="text-left px-3 py-2.5 font-medium text-xs tracking-wide hidden lg:table-cell">Email</th>
-                <th className="text-left px-3 py-2.5 font-medium text-xs tracking-wide">Role</th>
-                <th className="text-left px-3 py-2.5 font-medium text-xs tracking-wide">Status</th>
+                <th className="text-left px-2.5 py-2 font-medium text-xs tracking-wide">Name</th>
+                <th className="text-left px-2.5 py-2 font-medium text-xs tracking-wide hidden md:table-cell">Code</th>
+                <th className="text-left px-2.5 py-2 font-medium text-xs tracking-wide hidden lg:table-cell">Email</th>
+                <th className="text-left px-2.5 py-2 font-medium text-xs tracking-wide">Role</th>
+                <th className="text-left px-2.5 py-2 font-medium text-xs tracking-wide">Status</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#E2E8F0]">
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="px-3 py-8 text-center text-xs text-gray-400">Loading…</td>
+                  <td colSpan={5} className="px-2.5 py-6 text-center text-xs text-gray-400">Loading…</td>
                 </tr>
               ) : filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-3 py-8 text-center text-xs text-gray-400">No employees found.</td>
+                  <td colSpan={5} className="px-2.5 py-6 text-center text-xs text-gray-400">No employees found.</td>
                 </tr>
               ) : (
                 filtered.map((emp, i) => (
                   <tr key={emp.id} className={i % 2 === 0 ? 'bg-white' : 'bg-[#EFF6FF]/40'}>
-                    <td className="px-3 py-2">
+                    <td className="px-2.5 py-1.5">
                       <div className="font-medium text-[#172554]">{emp.full_name}</div>
                     </td>
-                    <td className="px-3 py-2 text-gray-500 hidden md:table-cell">
+                    <td className="px-2.5 py-1.5 text-gray-500 hidden md:table-cell">
                       {emp.employee_code || '—'}
                     </td>
-                    <td className="px-3 py-2 text-gray-500 text-[11px] hidden lg:table-cell">
+                    <td className="px-2.5 py-1.5 text-gray-500 text-[11px] hidden lg:table-cell">
                       {emp.company_email}
                     </td>
-                    <td className="px-3 py-2"><RoleBadge role={emp.role} /></td>
-                    <td className="px-3 py-2"><StatusBadge status={emp.status} /></td>
+                    <td className="px-2.5 py-1.5"><RoleBadge role={emp.role} /></td>
+                    <td className="px-2.5 py-1.5"><StatusBadge status={emp.status} /></td>
                   </tr>
                 ))
               )}
             </tbody>
           </table>
         </div>
-        <div className="px-3 py-2 border-t border-[#E2E8F0] bg-gray-50 text-xs text-gray-500 font-medium">
+        <div className="px-2.5 py-1.5 border-t border-[#E2E8F0] bg-gray-50 text-xs text-gray-500 font-medium">
           {loading ? '' : `${filtered.length} employee${filtered.length !== 1 ? 's' : ''}`}
         </div>
       </div>

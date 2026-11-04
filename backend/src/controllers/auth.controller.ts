@@ -144,3 +144,31 @@ export async function getMe(req: AuthenticatedRequest, res: Response): Promise<v
   });
 }
 
+export async function updateProfile(req: AuthenticatedRequest, res: Response): Promise<void> {
+  const user = req.user!;
+  const { full_name } = req.body;
+
+  if (!full_name || typeof full_name !== 'string' || full_name.trim().length === 0) {
+    res.status(400).json({
+      error: 'Bad Request',
+      message: 'Full name is required.'
+    });
+    return;
+  }
+
+  await dbRepository.updateUserName(user.id, full_name.trim());
+
+  await dbRepository.createAuditLog({
+    actor_user_id: user.id,
+    action: 'PROFILE_UPDATED',
+    entity_type: 'users',
+    entity_id: user.id,
+    reason: 'User updated their profile name'
+  });
+
+  res.json({
+    message: 'Profile updated successfully.',
+    full_name: full_name.trim()
+  });
+}
+

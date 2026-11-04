@@ -3,11 +3,13 @@ import {
   StyleSheet,
   Text,
   View,
-  SafeAreaView,
   TouchableOpacity,
   ActivityIndicator,
-  Alert
+  Alert,
+  BackHandler,
+  Platform
 } from 'react-native';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { colors } from './src/theme/colors';
 import { api, UserProfile, MyAttendanceResponse, ScanResponse } from './src/services/api';
@@ -16,8 +18,9 @@ import { PasswordChangeModal } from './src/components/PasswordChangeModal';
 import { ScannerModal } from './src/components/ScannerModal';
 import { HistoryView } from './src/components/HistoryView';
 import { CorrectionModal } from './src/components/CorrectionModal';
+import { ProfileModal } from './src/components/ProfileModal';
 
-export default function App() {
+function AppContent() {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [mustChangePassword, setMustChangePassword] = useState(false);
   const [activeTab, setActiveTab] = useState<'today' | 'history'>('today');
@@ -29,7 +32,50 @@ export default function App() {
   // Modals
   const [showScanner, setShowScanner] = useState(false);
   const [showCorrections, setShowCorrections] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
   const [lastScanResult, setLastScanResult] = useState<ScanResponse | null>(null);
+
+  // Android back button handler
+  useEffect(() => {
+    if (Platform.OS !== 'android') return;
+
+    const backAction = () => {
+      // Close modals first before exiting
+      if (showScanner) {
+        setShowScanner(false);
+        return true;
+      }
+      if (showCorrections) {
+        setShowCorrections(false);
+        return true;
+      }
+      if (showProfile) {
+        setShowProfile(false);
+        return true;
+      }
+      if (mustChangePassword) {
+        // Don't allow back during forced password change
+        return true;
+      }
+      if (user && activeTab === 'history') {
+        // Go back to today tab if on history
+        setActiveTab('today');
+        return true;
+      }
+      // Show exit confirmation at app root
+      if (user) {
+        Alert.alert('Exit App', 'Are you sure you want to exit?', [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Exit', onPress: () => BackHandler.exitApp() }
+        ]);
+        return true;
+      }
+      return false;
+    };
+
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
+    return () => backHandler.remove();
+  }, [showScanner, showCorrections, showProfile, mustChangePassword, user, activeTab]);
 
   const fetchAttendance = async () => {
     setLoadingAttendance(true);
@@ -70,7 +116,7 @@ export default function App() {
 
   if (!user) {
     return (
-      <SafeAreaView style={styles.safeArea}>
+      <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
         <StatusBar style="dark" />
         <LoginScreen onLoginSuccess={handleLoginSuccess} />
       </SafeAreaView>
@@ -80,9 +126,10 @@ export default function App() {
   const todayStatus = attendanceData?.today.status || 'not_started';
   const hasCheckedIn = todayStatus === 'open' || todayStatus === 'completed';
   const hasCheckedOut = todayStatus === 'completed';
+  const canScan = !hasCheckedOut; // Disable scanning once both punches complete
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
       <StatusBar style="light" />
 
       {/* Forced Password Change Modal */}
@@ -107,14 +154,21 @@ export default function App() {
         onClose={() => setShowCorrections(false)}
       />
 
+      {/* Profile Modal */}
+      <ProfileModal
+        visible={showProfile}
+        onClose={() => setShowProfile(false)}
+        user={user}
+      />
+
       {/* Dense Navy Top Bar */}
       <View style={styles.header}>
-        <View>
+        <TouchableOpacity onPress={() => setShowProfile(true)} style={{flex: 1}}>
           <Text style={styles.headerTitle}>{user.full_name}</Text>
           <Text style={styles.headerSubtitle}>
             {user.company_email} • {user.employee_code || user.role}
           </Text>
-        </View>
+        </TouchableOpacity>
         <TouchableOpacity style={styles.signOutBtn} onPress={handleSignOut}>
           <Text style={styles.signOutBtnText}>Sign Out</Text>
         </TouchableOpacity>
@@ -212,13 +266,23 @@ export default function App() {
 
           {/* Primary Action Button */}
           <TouchableOpacity
-            style={styles.primaryActionButton}
-            onPress={() => setShowScanner(true)}
-            activeOpacity={0.85}
+            style={[styles.primaryActionButton, !canScan && styles.primaryActionButtonDisabled]}
+            onPress={() => canScan && setShowScanner(true)}
+            activeOpacity={canScan ? 0.85 : 1}
+            disabled={!canScan}
           >
-            <Text style={styles.primaryActionText}>
-              {hasCheckedIn && !hasCheckedOut ? 'Scan to Check Out' : 'Scan Office QR'}
+            <Text style={[styles.primaryActionText, !canScan && styles.primaryActionTextDisabled]}>
+              {hasCheckedOut 
+                ? '✓ Today\'s Attendance Complete' 
+                : hasCheckedIn 
+                ? 'Scan to Check Out' 
+                : 'Scan Office QR'}
             </Text>
+            {hasCheckedOut && (
+              <Text style={styles.completionSubtext}>
+                Both check-in and check-out recorded
+              </Text>
+            )}
           </TouchableOpacity>
 
           {/* Missed Punch Action */}
@@ -249,6 +313,14 @@ export default function App() {
         />
       )}
     </SafeAreaView>
+  );
+}
+
+export default function App() {
+  return (
+    <SafeAreaProvider>
+      <AppContent />
+    </SafeAreaProvider>
   );
 }
 
@@ -407,10 +479,24 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 2,
   },
+  primaryActionButtonDisabled: {
+    backgroundColor: '#10B981',
+    shadowOpacity: 0,
+    elevation: 0,
+  },
   primaryActionText: {
     color: colors.white,
     fontSize: 15,
     fontWeight: '700',
+  },
+  primaryActionTextDisabled: {
+    color: colors.white,
+  },
+  completionSubtext: {
+    color: '#D1FAE5',
+    fontSize: 11,
+    fontWeight: '500',
+    marginTop: 4,
   },
   secondaryActionButton: {
     backgroundColor: colors.lightBlue,

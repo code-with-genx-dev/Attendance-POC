@@ -21,7 +21,8 @@
         "backgroundColor": "#172554"
       },
       "permissions": [
-        "android.permission.CAMERA"
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
       ]
     },
     "plugins": [
@@ -31,7 +32,11 @@
           "cameraPermission": "Allow Attendance Mobile to access your camera to scan office QR codes."
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "9f6511ff-77ee-4130-b684-a75a219c84cc"
+      }
+    }
   }
 }
-

@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   Alert
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors } from '../theme/colors';
 import { api, CorrectionItem } from '../services/api';
 
@@ -19,13 +20,21 @@ interface CorrectionModalProps {
 }
 
 export function CorrectionModal({ visible, onClose }: CorrectionModalProps) {
+  const insets = useSafeAreaInsets();
   const [punchType, setPunchType] = useState<'check_in' | 'check_out'>('check_out');
-  const [requestedTime, setRequestedTime] = useState(new Date().toISOString());
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedHour, setSelectedHour] = useState('09');
+  const [selectedMinute, setSelectedMinute] = useState('00');
   const [reason, setReason] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [corrections, setCorrections] = useState<CorrectionItem[]>([]);
   const [fetchingList, setFetchingList] = useState(false);
+
+  // Generate hour options (00-23)
+  const hours = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
+  // Generate minute options (00, 15, 30, 45)
+  const minutes = ['00', '15', '30', '45'];
 
   const fetchCorrections = async () => {
     setFetchingList(true);
@@ -43,7 +52,9 @@ export function CorrectionModal({ visible, onClose }: CorrectionModalProps) {
     if (visible) {
       setReason('');
       setError(null);
-      setRequestedTime(new Date().toISOString());
+      setSelectedDate(new Date().toISOString().split('T')[0]);
+      setSelectedHour('09');
+      setSelectedMinute('00');
       fetchCorrections();
     }
   }, [visible]);
@@ -54,6 +65,9 @@ export function CorrectionModal({ visible, onClose }: CorrectionModalProps) {
       return;
     }
 
+    // Construct ISO timestamp from date and time
+    const requestedTime = `${selectedDate}T${selectedHour}:${selectedMinute}:00`;
+
     setError(null);
     setLoading(true);
     try {
@@ -63,6 +77,9 @@ export function CorrectionModal({ visible, onClose }: CorrectionModalProps) {
         reason: reason.trim()
       });
       setReason('');
+      setSelectedDate(new Date().toISOString().split('T')[0]);
+      setSelectedHour('09');
+      setSelectedMinute('00');
       await fetchCorrections();
       Alert.alert('Success', 'Correction request submitted for Admin review.');
     } catch (err: any) {
@@ -87,7 +104,7 @@ export function CorrectionModal({ visible, onClose }: CorrectionModalProps) {
     <Modal visible={visible} animationType="slide" transparent={false}>
       <View style={styles.container}>
         {/* Top Bar */}
-        <View style={styles.topBar}>
+        <View style={[styles.topBar, { paddingTop: insets.top + 14 }]}>
           <Text style={styles.topBarTitle}>Missed-Punch Correction</Text>
           <TouchableOpacity onPress={onClose} style={styles.closeButton}>
             <Text style={styles.closeButtonText}>Close</Text>
@@ -142,13 +159,74 @@ export function CorrectionModal({ visible, onClose }: CorrectionModalProps) {
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>REQUESTED PUNCH TIME (ISO TIMESTAMP)</Text>
+              <Text style={styles.label}>DATE</Text>
               <TextInput
                 style={styles.input}
-                value={requestedTime}
-                onChangeText={setRequestedTime}
-                autoCapitalize="none"
+                value={selectedDate}
+                onChangeText={setSelectedDate}
+                placeholder="YYYY-MM-DD"
+                placeholderTextColor="#94A3B8"
               />
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>TIME (24-HOUR FORMAT)</Text>
+              <View style={styles.timePickerRow}>
+                <View style={styles.timePickerColumn}>
+                  <Text style={styles.timePickerLabel}>Hour</Text>
+                  <ScrollView style={styles.timePicker} nestedScrollEnabled>
+                    {hours.map(hour => (
+                      <TouchableOpacity
+                        key={hour}
+                        style={[
+                          styles.timeOption,
+                          selectedHour === hour && styles.timeOptionSelected
+                        ]}
+                        onPress={() => setSelectedHour(hour)}
+                      >
+                        <Text
+                          style={[
+                            styles.timeOptionText,
+                            selectedHour === hour && styles.timeOptionTextSelected
+                          ]}
+                        >
+                          {hour}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                </View>
+
+                <Text style={styles.timeSeparator}>:</Text>
+
+                <View style={styles.timePickerColumn}>
+                  <Text style={styles.timePickerLabel}>Minute</Text>
+                  <ScrollView style={styles.timePicker} nestedScrollEnabled>
+                    {minutes.map(minute => (
+                      <TouchableOpacity
+                        key={minute}
+                        style={[
+                          styles.timeOption,
+                          selectedMinute === minute && styles.timeOptionSelected
+                        ]}
+                        onPress={() => setSelectedMinute(minute)}
+                      >
+                        <Text
+                          style={[
+                            styles.timeOptionText,
+                            selectedMinute === minute && styles.timeOptionTextSelected
+                          ]}
+                        >
+                          {minute}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                </View>
+              </View>
+              <Text style={styles.timePreview}>
+                Selected time: {selectedHour}:{selectedMinute}
+              </Text>
             </View>
 
             <View style={styles.inputGroup}>
@@ -226,7 +304,6 @@ const styles = StyleSheet.create({
   },
   topBar: {
     backgroundColor: colors.navy,
-    paddingTop: 45,
     paddingBottom: 14,
     paddingHorizontal: 16,
     flexDirection: 'row',
@@ -330,6 +407,60 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: colors.text,
     backgroundColor: '#FFFFFF',
+  },
+  timePickerRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+  },
+  timePickerColumn: {
+    flex: 1,
+  },
+  timePickerLabel: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: colors.mutedText,
+    marginBottom: 6,
+    textAlign: 'center',
+  },
+  timePicker: {
+    maxHeight: 120,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 6,
+    backgroundColor: '#FFFFFF',
+  },
+  timeOption: {
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+    alignItems: 'center',
+  },
+  timeOptionSelected: {
+    backgroundColor: colors.lightBlue,
+  },
+  timeOptionText: {
+    fontSize: 14,
+    color: colors.text,
+    fontWeight: '500',
+  },
+  timeOptionTextSelected: {
+    color: colors.primary,
+    fontWeight: '700',
+  },
+  timeSeparator: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: colors.navy,
+    marginTop: 30,
+  },
+  timePreview: {
+    fontSize: 12,
+    color: colors.mutedText,
+    marginTop: 6,
+    textAlign: 'center',
+    fontWeight: '600',
   },
   textArea: {
     height: 70,

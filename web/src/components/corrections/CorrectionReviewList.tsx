@@ -206,51 +206,91 @@ export default function CorrectionReviewList() {
         <div className="mb-3 px-4 py-2 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs">{error}</div>
       )}
 
-      <div className="space-y-2.5">
-        {loading ? (
-          <div className="text-center text-xs text-gray-400 py-8">Loading…</div>
-        ) : corrections.length === 0 ? (
-          <div className="text-center text-xs text-gray-400 py-8">
-            No {statusFilter || ''} correction requests found.
+      {/* Corrections Table */}
+      <div className="bg-white rounded-lg border border-[#E2E8F0] overflow-hidden shadow-sm">
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="bg-[#172554] text-white">
+                <th className="text-left px-3 py-2 font-medium">Employee</th>
+                <th className="text-left px-3 py-2 font-medium">Type</th>
+                <th className="text-left px-3 py-2 font-medium">Requested Time</th>
+                <th className="text-left px-3 py-2 font-medium">Reason</th>
+                <th className="text-left px-3 py-2 font-medium">Status</th>
+                <th className="text-left px-3 py-2 font-medium">Submitted</th>
+                <th className="text-center px-3 py-2 font-medium">Action</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[#E2E8F0]">
+              {loading ? (
+                <tr>
+                  <td colSpan={7} className="px-3 py-8 text-center text-gray-400">Loading…</td>
+                </tr>
+              ) : corrections.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="px-3 py-8 text-center text-gray-400">
+                    No {statusFilter || ''} correction requests found.
+                  </td>
+                </tr>
+              ) : (
+                corrections.map((c, i) => (
+                  <tr key={c.id} className={i % 2 === 0 ? 'bg-white' : 'bg-[#F8FAFC]'}>
+                    <td className="px-3 py-2">
+                      <div className="font-medium text-[#172554]">{c.employee_name}</div>
+                      {c.employee_code && (
+                        <div className="text-gray-400 text-[10px]">#{c.employee_code}</div>
+                      )}
+                    </td>
+                    <td className="px-3 py-2 text-gray-600 capitalize">
+                      {c.punch_type.replace('_', ' ')}
+                    </td>
+                    <td className="px-3 py-2 text-[#172554] font-medium">
+                      {formatDateTime(c.requested_time)}
+                    </td>
+                    <td className="px-3 py-2 text-gray-600 max-w-xs truncate" title={c.reason}>
+                      {c.reason}
+                    </td>
+                    <td className="px-3 py-2">
+                      <StatusBadge status={c.status} />
+                      {c.decision_reason && (
+                        <div className="text-[10px] text-gray-500 mt-1" title={c.decision_reason}>
+                          {c.reviewer_name || 'Admin'}: {c.decision_reason.substring(0, 30)}
+                          {c.decision_reason.length > 30 ? '...' : ''}
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-3 py-2 text-gray-500">
+                      {new Date(c.created_at).toLocaleDateString('en-IN', {
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </td>
+                    <td className="px-3 py-2 text-center">
+                      {c.status === 'pending' ? (
+                        <button
+                          onClick={() => setSelected(c)}
+                          className="px-3 py-1 bg-[#1D4ED8] hover:bg-[#1e40af] text-white text-[11px] font-medium rounded transition-colors"
+                        >
+                          Review
+                        </button>
+                      ) : (
+                        <span className="text-gray-400 text-[11px]">—</span>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Table footer with count */}
+        {!loading && corrections.length > 0 && (
+          <div className="px-3 py-2 border-t border-[#E2E8F0] bg-gray-50 text-xs text-gray-500 font-medium">
+            {corrections.length} record{corrections.length !== 1 ? 's' : ''}
           </div>
-        ) : (
-          corrections.map(c => (
-            <div
-              key={c.id}
-              className="bg-white rounded-xl border border-[#E2E8F0] px-4 py-3"
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1 flex-wrap">
-                    <span className="font-medium text-[#172554] text-sm">{c.employee_name}</span>
-                    {c.employee_code && (
-                      <span className="text-gray-400 text-[11px]">#{c.employee_code}</span>
-                    )}
-                    <StatusBadge status={c.status} />
-                  </div>
-                  <div className="text-xs text-gray-500 mb-1">
-                    <span className="capitalize">{c.punch_type.replace('_', ' ')}</span>
-                    {' · '}
-                    <span className="font-medium text-[#172554]">{formatDateTime(c.requested_time)}</span>
-                  </div>
-                  <div className="text-xs text-gray-600">"{c.reason}"</div>
-                  {c.decision_reason && (
-                    <div className="mt-1.5 text-xs text-gray-500">
-                      <span className="font-medium">{c.reviewer_name || 'Admin'}:</span> {c.decision_reason}
-                    </div>
-                  )}
-                </div>
-                {c.status === 'pending' && (
-                  <button
-                    onClick={() => setSelected(c)}
-                    className="shrink-0 px-3 py-1.5 bg-[#1D4ED8] hover:bg-[#1e40af] text-white text-xs font-medium rounded-lg transition-colors"
-                  >
-                    Review
-                  </button>
-                )}
-              </div>
-            </div>
-          ))
         )}
       </div>
 

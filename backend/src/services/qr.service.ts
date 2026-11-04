@@ -1,8 +1,7 @@
 import crypto from 'crypto';
 import QRCode from 'qrcode';
 import { config } from '../config';
-import { dbRepository } from '../db';
-import { QrTokenRecord } from '../db/mockStore';
+import { dbRepository, QrTokenRecord } from '../db';
 
 export interface QrPayload {
   token: string;

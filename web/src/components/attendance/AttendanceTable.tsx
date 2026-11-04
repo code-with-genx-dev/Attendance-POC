@@ -89,8 +89,8 @@ export default function AttendanceTable() {
   return (
     <div>
       {/* Filters Card */}
-      <div className="bg-white rounded-xl border border-[#E2E8F0] p-4 mb-3 shadow-sm">
-        <div className="flex items-center justify-between mb-3 pb-2 border-b border-[#E2E8F0]">
+      <div className="bg-white rounded-lg border border-[#E2E8F0] p-3 mb-3 shadow-sm">
+        <div className="flex items-center justify-between mb-2 pb-2 border-b border-[#E2E8F0]">
           <div className="flex items-center gap-2">
             <span className="text-xs font-bold text-[#172554] uppercase tracking-wide">Filters</span>
             {isFilterActive && (
@@ -112,7 +112,7 @@ export default function AttendanceTable() {
           )}
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
           <div>
             <label className="block text-[11px] font-medium text-[#172554] mb-1 uppercase tracking-wide">From</label>
             <input
@@ -170,7 +170,7 @@ export default function AttendanceTable() {
           </div>
         </div>
 
-        <div className="flex items-center justify-between mt-3 pt-3 border-t border-[#E2E8F0]">
+        <div className="flex items-center justify-between mt-2 pt-2 border-t border-[#E2E8F0]">
           <span className="text-xs text-gray-500 font-medium">
             {loading ? 'Loading…' : `${filtered.length} record${filtered.length !== 1 ? 's' : ''}`}
           </span>
@@ -210,17 +210,17 @@ export default function AttendanceTable() {
       )}
 
       {/* Table */}
-      <div className="bg-white rounded-xl border border-[#E2E8F0] overflow-hidden shadow-sm">
+      <div className="bg-white rounded-lg border border-[#E2E8F0] overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full text-[13px]">
             <thead>
               <tr className="bg-[#172554] text-white">
-                <th className="text-left px-3 py-2.5 font-medium text-xs tracking-wide">Employee</th>
-                <th className="text-left px-3 py-2.5 font-medium text-xs tracking-wide hidden md:table-cell">Code</th>
-                <th className="text-left px-3 py-2.5 font-medium text-xs tracking-wide">Date</th>
-                <th className="text-left px-3 py-2.5 font-medium text-xs tracking-wide">Check-In</th>
-                <th className="text-left px-3 py-2.5 font-medium text-xs tracking-wide">Check-Out</th>
-                <th className="text-left px-3 py-2.5 font-medium text-xs tracking-wide">Status</th>
+                <th className="text-left px-2 py-2 font-medium text-xs tracking-wide">Employee</th>
+                <th className="text-left px-2 py-2 font-medium text-xs tracking-wide hidden md:table-cell">Code</th>
+                <th className="text-left px-2 py-2 font-medium text-xs tracking-wide">Date</th>
+                <th className="text-left px-2 py-2 font-medium text-xs tracking-wide">Check-In</th>
+                <th className="text-left px-2 py-2 font-medium text-xs tracking-wide">Check-Out</th>
+                <th className="text-left px-2 py-2 font-medium text-xs tracking-wide">Status</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#E2E8F0]">
@@ -237,17 +237,17 @@ export default function AttendanceTable() {
               ) : (
                 pageSessions.map((s, i) => (
                   <tr key={s.id} className={i % 2 === 0 ? 'bg-white' : 'bg-[#EFF6FF]/40'}>
-                    <td className="px-3 py-2">
+                    <td className="px-2 py-1.5">
                       <div className="font-medium text-[#172554] text-[13px] leading-tight">{s.full_name}</div>
                       <div className="text-gray-400 text-[11px] leading-tight">{s.company_email}</div>
                     </td>
-                    <td className="px-3 py-2 text-gray-500 text-[13px] hidden md:table-cell">
+                    <td className="px-2 py-1.5 text-gray-500 text-[13px] hidden md:table-cell">
                       {s.employee_code || '—'}
                     </td>
-                    <td className="px-3 py-2 text-[#172554] text-[13px]">{s.work_date}</td>
-                    <td className="px-3 py-2 text-[13px] text-gray-700">{formatTime(s.check_in_at)}</td>
-                    <td className="px-3 py-2 text-[13px] text-gray-700">{formatTime(s.check_out_at)}</td>
-                    <td className="px-3 py-2"><StatusBadge status={s.status} /></td>
+                    <td className="px-2 py-1.5 text-[#172554] text-[13px]">{s.work_date}</td>
+                    <td className="px-2 py-1.5 text-[13px] text-gray-700">{formatTime(s.check_in_at)}</td>
+                    <td className="px-2 py-1.5 text-[13px] text-gray-700">{formatTime(s.check_out_at)}</td>
+                    <td className="px-2 py-1.5"><StatusBadge status={s.status} /></td>
                   </tr>
                 ))
               )}
@@ -257,7 +257,7 @@ export default function AttendanceTable() {
 
         {/* Pagination */}
         {!loading && filtered.length > PAGE_SIZE && (
-          <div className="px-3 py-2.5 border-t border-[#E2E8F0] flex items-center justify-between bg-gray-50">
+          <div className="px-3 py-2 border-t border-[#E2E8F0] flex items-center justify-between bg-gray-50">
             <span className="text-xs text-gray-500">
               Page {page + 1} of {totalPages}
             </span>

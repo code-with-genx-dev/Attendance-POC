@@ -11,6 +11,30 @@ interface HistoryViewProps {
 }
 
 export function HistoryView({ history, loading, onRefresh, officeTimezone }: HistoryViewProps) {
+  const [selectedMonth, setSelectedMonth] = React.useState<string>('all');
+
+  // Generate last 6 months options
+  const getMonthOptions = () => {
+    const options = [{ label: 'All Time', value: 'all' }];
+    const now = new Date();
+    
+    for (let i = 0; i < 6; i++) {
+      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const label = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+      const value = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      options.push({ label, value });
+    }
+    
+    return options;
+  };
+
+  const monthOptions = getMonthOptions();
+
+  // Filter history by selected month
+  const filteredHistory = selectedMonth === 'all' 
+    ? history 
+    : history.filter(item => item.work_date.startsWith(selectedMonth));
+
   const formatTime = (isoString: string | null) => {
     if (!isoString) return '--:--';
     try {
@@ -66,16 +90,49 @@ export function HistoryView({ history, loading, onRefresh, officeTimezone }: His
         <Text style={styles.topInfoText}>All times recorded in {officeTimezone}</Text>
       </View>
 
+      {/* Month Filter */}
+      <View style={styles.filterSection}>
+        <Text style={styles.filterLabel}>Filter by Month</Text>
+        <View style={styles.filterButtons}>
+          {monthOptions.map(option => (
+            <TouchableOpacity
+              key={option.value}
+              style={[
+                styles.filterButton,
+                selectedMonth === option.value && styles.filterButtonActive
+              ]}
+              onPress={() => setSelectedMonth(option.value)}
+            >
+              <Text
+                style={[
+                  styles.filterButtonText,
+                  selectedMonth === option.value && styles.filterButtonTextActive
+                ]}
+              >
+                {option.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+        {selectedMonth !== 'all' && (
+          <Text style={styles.filterResultText}>
+            Showing {filteredHistory.length} record{filteredHistory.length !== 1 ? 's' : ''}
+          </Text>
+        )}
+      </View>
+
       <FlatList
-        data={history}
+        data={filteredHistory}
         keyExtractor={(item: AttendanceHistoryItem) => item.id.toString()}
         renderItem={renderItem}
         contentContainerStyle={styles.listContent}
         refreshControl={<RefreshControl refreshing={loading} onRefresh={onRefresh} />}
         ListEmptyComponent={
           <View style={styles.emptyBox}>
-            <Text style={styles.emptyText}>No attendance records found yet.</Text>
-            <Text style={styles.emptySubtext}>Your punches will appear here once recorded.</Text>
+            <Text style={styles.emptyText}>No attendance records found{selectedMonth !== 'all' ? ' for this month' : ' yet'}.</Text>
+            <Text style={styles.emptySubtext}>
+              {selectedMonth !== 'all' ? 'Try selecting a different month.' : 'Your punches will appear here once recorded.'}
+            </Text>
           </View>
         }
       />
@@ -98,6 +155,50 @@ const styles = StyleSheet.create({
   topInfoText: {
     fontSize: 11,
     color: colors.navy,
+  },
+  filterSection: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: colors.white,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  filterLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: colors.mutedText,
+    letterSpacing: 0.4,
+    marginBottom: 8,
+  },
+  filterButtons: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  filterButton: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.white,
+  },
+  filterButtonActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  filterButtonText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: colors.text,
+  },
+  filterButtonTextActive: {
+    color: colors.white,
+  },
+  filterResultText: {
+    fontSize: 10,
+    color: colors.mutedText,
+    marginTop: 8,
   },
   listContent: {
     padding: 16,

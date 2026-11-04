@@ -37,16 +37,17 @@ export interface AppConfig {
   };
 }
 
-const rawDbUser = process.env.DB_USER || '';
-const rawDbPass = process.env.DB_PASSWORD || '';
+const rawDbUser = process.env.DB_USER !== undefined ? process.env.DB_USER : '';
+const rawDbPass = process.env.DB_PASSWORD !== undefined ? process.env.DB_PASSWORD : '';
 const rawDbName = process.env.DB_NAME || 'attendance_poc_db';
-const rawDbHost = process.env.DB_HOST || 'localhost';
+const rawDbHost = process.env.DB_HOST || '127.0.0.1';
 const rawDbPort = parseInt(process.env.DB_PORT || '3306', 10);
 
-// Determine if user has configured MySQL or if placeholders are present
-const isPlaceholderUser = !rawDbUser || rawDbUser === 'your_mysql_username';
+// Determine if user has configured MySQL
+// Empty string is valid (Laragon/XAMPP use root with empty password)
+const isPlaceholderUser = rawDbUser === 'your_mysql_username';
 const isPlaceholderPass = rawDbPass === 'your_mysql_password';
-const isDbConfigured = !isPlaceholderUser && Boolean(rawDbUser);
+const isDbConfigured = process.env.DB_USER !== undefined && !isPlaceholderUser;
 
 const statusMessage = isDbConfigured
   ? `Configured to target MySQL database '${rawDbName}' at ${rawDbHost}:${rawDbPort}`
